@@ -4,6 +4,24 @@ A custom SAP ABAP Module Pool application designed to streamline role-based requ
 
 ---
 
+
+📂 Tech Stack
+SAP ABAP Module Pool
+
+Screen Painter
+
+ALV Grid Display
+
+Smart Forms
+
+Z-tables
+
+Number Ranges
+
+BAPI_GOODSMVT_CREATE
+
+---
+
 ## 🔧 Features
 
 - **Multi-screen Navigation** via Module Pool (Screens: 100, 200, 300, 400)
@@ -114,13 +132,10 @@ Uses `BAPI_GOODSMVT_CREATE` to simulate real SAP Goods Issue after final approva
 
 ---
 
-## 🚀 Future Enhancements
-
-- Add email notifications for status changes
-- Implement transaction logs with timestamps
-- Enhance search and filter functionality in ALV reports
-
----
+👨‍💻 Developed By
+Kunal Deshpande
+B.Tech CSE @ Medi-Caps University
+SAP ABAP Intern at VECV
 
 
 
