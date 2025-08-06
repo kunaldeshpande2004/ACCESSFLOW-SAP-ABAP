@@ -21,13 +21,18 @@ A custom SAP ABAP Module Pool application designed to streamline role-based requ
 ---
 
 ## 🧑‍💼 User Role-Based Navigation
+<img width="1117" height="627" alt="image" src="https://github.com/user-attachments/assets/46846d2b-1a29-47fb-a7c9-7ede7416af67" />
+
+
+
 
 ### 🔐 Screen 100 – Login Page
 
 - Authenticates user from `ZTEST_AUTH`
 - Navigates to the respective screen based on user type (A/B/C)
 
-📷 
+📷 <img width="1600" height="854" alt="image" src="https://github.com/user-attachments/assets/dbc086a5-c156-450c-bacb-cc2236b13643" />
+
 
 ---
 
@@ -41,7 +46,8 @@ A custom SAP ABAP Module Pool application designed to streamline role-based requ
 - System generates a **unique Request Number** using number range
 - Data saved in `ZTABLE_REQ`
 
-📷 *Insert Screenshot of Request Creation Screen (Screen 200)*
+📷 <img width="1365" height="716" alt="image" src="https://github.com/user-attachments/assets/bcc88138-635e-4005-8a73-03df1c017925" />
+
 
 ---
 
@@ -54,7 +60,8 @@ A custom SAP ABAP Module Pool application designed to streamline role-based requ
 - Includes a **Search Bar** for direct Request Number lookup
 - Approved requests become visible to Issuer
 
-📷 *Insert Screenshot of Approver Screen (Screen 300)*
+📷 <img width="1365" height="667" alt="image" src="https://github.com/user-attachments/assets/a0b27b1c-bd3b-467e-9601-053a1fe10666" />
+
 
 ---
 
@@ -65,7 +72,8 @@ A custom SAP ABAP Module Pool application designed to streamline role-based requ
 - If Issued, invokes `BAPI_GOODSMVT_CREATE` for goods movement
 - Issued request stored in `ZISSUED_REQ`
 
-📷 *Insert Screenshot of Issuer Screen (Screen 400)*
+📷 <img width="1365" height="672" alt="image" src="https://github.com/user-attachments/assets/b812a9fd-0adb-4e45-92e2-e9e1fadb8569" />
+
 
 ---
 
@@ -76,7 +84,8 @@ A custom SAP ABAP Module Pool application designed to streamline role-based requ
 - Fields: `USERNAME`, `PASSWORD`, `USER_TYPE`
 - Used for login authentication and screen routing
 
-📷 *Insert Screenshot of ZTEST_AUTH Table*
+📷 <img width="975" height="559" alt="image" src="https://github.com/user-attachments/assets/3c2db213-4644-4ab6-9e0b-434cb6aa1abb" />
+
 
 ---
 
@@ -85,16 +94,8 @@ A custom SAP ABAP Module Pool application designed to streamline role-based requ
 - Stores all pending and approved requests
 - Used by Approver and Issuer roles
 
-📷 *Insert Screenshot of ZTABLE_REQ Table*
+📷 <img width="975" height="481" alt="image" src="https://github.com/user-attachments/assets/b3f165df-6567-4017-9850-731cabc91d52" />
 
----
-
-
-
-## 📈 ALV Reports
-
-- Approver and Issuer screens display tabular request data using ALV
-- Improves readability and decision-making
 
 ---
 
@@ -103,7 +104,9 @@ A custom SAP ABAP Module Pool application designed to streamline role-based requ
 - Generates printable request summary for Requesters
 - Preview feature available on Screen 200
 
----
+  <img width="1355" height="717" alt="image" src="https://github.com/user-attachments/assets/6047a80d-12e3-4744-b313-1d1642f91282" />
+
+---  
 
 ## 🔌 BAPI Integration
 
@@ -119,10 +122,5 @@ Uses `BAPI_GOODSMVT_CREATE` to simulate real SAP Goods Issue after final approva
 
 ---
 
-## 📁 Screenshots
 
-*(Upload your screenshots and replace the placeholders above with image links using markdown syntax like:)*
-
-```markdown
-![Login Screen](screenshots/login.png)
 
