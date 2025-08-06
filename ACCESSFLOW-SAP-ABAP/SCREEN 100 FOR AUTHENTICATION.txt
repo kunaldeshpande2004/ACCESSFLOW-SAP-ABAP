@@ -1,0 +1,542 @@
+*&amp;---------------------------------------------------------------------*
+*&amp; Modulpool ZTEST_MP
+*&amp;---------------------------------------------------------------------*
+*&amp;
+*&amp;---------------------------------------------------------------------*
+PROGRAM ZTEST_MP.
+ DATA  ls_table TYPE  STANDARD TABLE OF ZTABLE_REQ WITH HEADER LINE  .
+DATA : USR TYPE ZTEST_AUTH-USERID,
+
+       PSD TYPE ZTEST_AUTH-PASSWORD,
+       MAT TYPE ZTABLE_REQ-MATERIAL,
+       PLA TYPE ZTABLE_REQ-PLANT,
+       QUAN TYPE ZTABLE_REQ-QUANTITY,
+       RE_NO TYPE NUM6,
+        R_NO TYPE NUM6,
+       show TYPE c.
+INCLUDE ztest_mp_status_0100o01.
+INCLUDE ztest_mp_status_0200o01.
+INCLUDE ztest_mp_status_0300o01.
+INCLUDE ztest_mp_status_0400o01.
+
+*&amp;---------------------------------------------------------------------*
+*&amp;      Module  USER_COMMAND_0100  INPUT
+*&amp;---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+  CASE SY-UCOMM.
+    WHEN &#39;EXIT&#39;.
+     LEAVE PROGRAM.
+    WHEN &#39;SUBMIT&#39;  OR &#39; &#39; .
+  DATA  code TYPE C.
+  SELECT    TYPEUSER  FROM ZTEST_AUTH INTO (@code) WHERE USERID = @USR AND PA
+SSWORD = @PSD. ENDSELECT .
+    IF SY-SUBRC &lt;&gt; 0.
+      MESSAGE : &#39;WRONG PASSWORD OR ID . PLEASE FILL THE USERID AND PASSWORD C
+ORRECTLY &#39; TYPE &#39;E&#39;.
+    ELSE.
+    CASE code.
+      WHEN &#39;A&#39;.
+*        CLEAR show.
+        CLEAR R_NO.
+        CALL SCREEN 0200.
+      WHEN &#39;B&#39;.
+         CLEAR RE_NO.
+         CLEAR ls_table.
+        CALL SCREEN 0300.
+      WHEN &#39;C&#39;.
+         CLEAR RE_NO.
+         CLEAR ls_table.
+        CALL SCREEN 0400.
+
+      WHEN OTHERS .
+        MESSAGE &#39; NOT DEFINED TYPE &#39; TYPE &#39;E&#39; .
+     ENDCASE.
+  ENDIF.
+  ENDCASE.
+ENDMODULE.
+***&amp;SPWIZARD: DATA DECLARATION FOR TABLECONTROL &#39;ZTEST&#39;
+*&amp;SPWIZARD: DEFINITION OF DDIC-TABLE
+TABLES:   ZTABLE_REQ.
+*&amp;SPWIZARD: TYPE FOR THE DATA OF TABLECONTROL &#39;ZTEST&#39;
+TYPES: BEGIN OF T_ZTEST,
+         REQ_NO LIKE ZTABLE_REQ-REQ_NO,
+         MATERIAL LIKE ZTABLE_REQ-MATERIAL,
+         MAT_DES LIKE ZTABLE_REQ-MAT_DES,
+         QUANTITY LIKE ZTABLE_REQ-QUANTITY,
+       END OF T_ZTEST.
+*&amp;SPWIZARD: INTERNAL TABLE FOR TABLECONTROL &#39;ZTEST&#39;
+DATA:     G_ZTEST_ITAB   TYPE T_ZTEST OCCURS 0,
+          G_ZTEST_WA     TYPE T_ZTEST. &quot;work area
+DATA:     G_ZTEST_COPIED.           &quot;copy flag
+*&amp;SPWIZARD: DECLARATION OF TABLECONTROL &#39;ZTEST&#39; ITSELF
+CONTROLS: ZTEST TYPE TABLEVIEW USING SCREEN 0300.
+*&amp;SPWIZARD: LINES OF TABLECONTROL &#39;ZTEST&#39;
+DATA:     G_ZTEST_LINES  LIKE SY-LOOPC.
+DATA:     OK_CODE LIKE SY-UCOMM.
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ZTEST&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: COPY DDIC-TABLE TO ITAB
+MODULE ZTEST_INIT OUTPUT.
+  IF G_ZTEST_COPIED IS INITIAL.
+*&amp;SPWIZARD: COPY DDIC-TABLE &#39;ZTABLE_REQ&#39;
+*&amp;SPWIZARD: INTO INTERNAL TABLE &#39;g_ZTEST_itab&#39;
+    SELECT * FROM ZTABLE_REQ
+       INTO CORRESPONDING FIELDS
+       OF TABLE G_ZTEST_ITAB.
+    G_ZTEST_COPIED = &#39;X&#39;.
+    REFRESH CONTROL &#39;ZTEST&#39; FROM SCREEN &#39;0300&#39;.
+  ENDIF.
+ENDMODULE.
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ZTEST&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: MOVE ITAB TO DYNPRO
+MODULE ZTEST_MOVE OUTPUT.
+  MOVE-CORRESPONDING G_ZTEST_WA TO ZTABLE_REQ.
+
+ENDMODULE.
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ZTEST&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: GET LINES OF TABLECONTROL
+MODULE ZTEST_GET_LINES OUTPUT.
+  G_ZTEST_LINES = SY-LOOPC.
+ENDMODULE.
+*&amp;SPWIZARD: INPUT MODULE FOR TC &#39;ZTEST&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: PROCESS USER COMMAND
+MODULE ZTEST_USER_COMMAND INPUT.
+  OK_CODE = SY-UCOMM.
+  PERFORM USER_OK_TC USING    &#39;ZTEST&#39;
+                              &#39;G_ZTEST_ITAB&#39;
+                              &#39;FLAG&#39;
+                     CHANGING OK_CODE.
+  SY-UCOMM = OK_CODE.
+ENDMODULE.
+*----------------------------------------------------------------------*
+*   INCLUDE TABLECONTROL_FORMS                                         *
+*----------------------------------------------------------------------*
+*&amp;---------------------------------------------------------------------*
+*&amp;      Form  USER_OK_TC                                               *
+*&amp;---------------------------------------------------------------------*
+ FORM USER_OK_TC USING    P_TC_NAME TYPE DYNFNAM
+                          P_TABLE_NAME
+                          P_MARK_NAME
+                 CHANGING P_OK      LIKE SY-UCOMM.
+*&amp;SPWIZARD: BEGIN OF LOCAL DATA----------------------------------------*
+   DATA: L_OK              TYPE SY-UCOMM,
+         L_OFFSET          TYPE I.
+*&amp;SPWIZARD: END OF LOCAL DATA------------------------------------------*
+*&amp;SPWIZARD: Table control specific operations                          *
+*&amp;SPWIZARD: evaluate TC name and operations                            *
+   SEARCH P_OK FOR P_TC_NAME.
+   IF SY-SUBRC &lt;&gt; 0.
+     EXIT.
+   ENDIF.
+   L_OFFSET = STRLEN( P_TC_NAME ) + 1.
+   L_OK = P_OK+L_OFFSET.
+*&amp;SPWIZARD: execute general and TC specific operations                 *
+   CASE L_OK.
+     WHEN &#39;INSR&#39;.                      &quot;insert row
+       PERFORM FCODE_INSERT_ROW USING    P_TC_NAME
+                                         P_TABLE_NAME.
+       CLEAR P_OK.
+     WHEN &#39;DELE&#39;.                      &quot;delete row
+       PERFORM FCODE_DELETE_ROW USING    P_TC_NAME
+
+                                         P_TABLE_NAME
+                                         P_MARK_NAME.
+       CLEAR P_OK.
+     WHEN &#39;P--&#39; OR                     &quot;top of list
+          &#39;P-&#39;  OR                     &quot;previous page
+          &#39;P+&#39;  OR                     &quot;next page
+          &#39;P++&#39;.                       &quot;bottom of list
+       PERFORM COMPUTE_SCROLLING_IN_TC USING P_TC_NAME
+                                             L_OK.
+       CLEAR P_OK.
+*     WHEN &#39;L--&#39;.                       &quot;total left
+*       PERFORM FCODE_TOTAL_LEFT USING P_TC_NAME.
+*
+*     WHEN &#39;L-&#39;.                        &quot;column left
+*       PERFORM FCODE_COLUMN_LEFT USING P_TC_NAME.
+*
+*     WHEN &#39;R+&#39;.                        &quot;column right
+*       PERFORM FCODE_COLUMN_RIGHT USING P_TC_NAME.
+*
+*     WHEN &#39;R++&#39;.                       &quot;total right
+*       PERFORM FCODE_TOTAL_RIGHT USING P_TC_NAME.
+*
+     WHEN &#39;MARK&#39;.                      &quot;mark all filled lines
+       PERFORM FCODE_TC_MARK_LINES USING P_TC_NAME
+                                         P_TABLE_NAME
+                                         P_MARK_NAME   .
+       CLEAR P_OK.
+     WHEN &#39;DMRK&#39;.                      &quot;demark all filled lines
+       PERFORM FCODE_TC_DEMARK_LINES USING P_TC_NAME
+                                           P_TABLE_NAME
+                                           P_MARK_NAME .
+       CLEAR P_OK.
+*     WHEN &#39;SASCEND&#39;   OR
+*          &#39;SDESCEND&#39;.                  &quot;sort column
+*       PERFORM FCODE_SORT_TC USING P_TC_NAME
+*                                   l_ok.
+   ENDCASE.
+ ENDFORM.                              &quot; USER_OK_TC
+*&amp;---------------------------------------------------------------------*
+*&amp;      Form  FCODE_INSERT_ROW                                         *
+*&amp;---------------------------------------------------------------------*
+ FORM fcode_insert_row
+               USING    P_TC_NAME           TYPE DYNFNAM
+                        P_TABLE_NAME             .
+*&amp;SPWIZARD: BEGIN OF LOCAL DATA----------------------------------------*
+   DATA L_LINES_NAME       LIKE FELD-NAME.
+
+   DATA L_SELLINE          LIKE SY-STEPL.
+   DATA L_LASTLINE         TYPE I.
+   DATA L_LINE             TYPE I.
+   DATA L_TABLE_NAME       LIKE FELD-NAME.
+   FIELD-SYMBOLS &lt;TC&gt;                 TYPE CXTAB_CONTROL.
+   FIELD-SYMBOLS &lt;TABLE&gt;              TYPE STANDARD TABLE.
+   FIELD-SYMBOLS &lt;LINES&gt;              TYPE I.
+*&amp;SPWIZARD: END OF LOCAL DATA------------------------------------------*
+   ASSIGN (P_TC_NAME) TO &lt;TC&gt;.
+*&amp;SPWIZARD: get the table, which belongs to the tc                     *
+   CONCATENATE P_TABLE_NAME &#39;[]&#39; INTO L_TABLE_NAME. &quot;table body
+   ASSIGN (L_TABLE_NAME) TO &lt;TABLE&gt;.                &quot;not headerline
+*&amp;SPWIZARD: get looplines of TableControl                              *
+   CONCATENATE &#39;G_&#39; P_TC_NAME &#39;_LINES&#39; INTO L_LINES_NAME.
+   ASSIGN (L_LINES_NAME) TO &lt;LINES&gt;.
+*&amp;SPWIZARD: get current line                                           *
+   GET CURSOR LINE L_SELLINE.
+   IF SY-SUBRC &lt;&gt; 0.                   &quot; append line to table
+     L_SELLINE = &lt;TC&gt;-LINES + 1.
+*&amp;SPWIZARD: set top line                                               *
+     IF L_SELLINE &gt; &lt;LINES&gt;.
+       &lt;TC&gt;-TOP_LINE = L_SELLINE - &lt;LINES&gt; + 1 .
+     ELSE.
+       &lt;TC&gt;-TOP_LINE = 1.
+     ENDIF.
+   ELSE.                               &quot; insert line into table
+     L_SELLINE = &lt;TC&gt;-TOP_LINE + L_SELLINE - 1.
+     L_LASTLINE = &lt;TC&gt;-TOP_LINE + &lt;LINES&gt; - 1.
+   ENDIF.
+*&amp;SPWIZARD: set new cursor line                                        *
+   L_LINE = L_SELLINE - &lt;TC&gt;-TOP_LINE + 1.
+*&amp;SPWIZARD: insert initial line                                        *
+   INSERT INITIAL LINE INTO &lt;TABLE&gt; INDEX L_SELLINE.
+   &lt;TC&gt;-LINES = &lt;TC&gt;-LINES + 1.
+*&amp;SPWIZARD: set cursor                                                 *
+   SET CURSOR 1 L_LINE.
+ ENDFORM.                              &quot; FCODE_INSERT_ROW
+*&amp;---------------------------------------------------------------------*
+*&amp;      Form  FCODE_DELETE_ROW                                         *
+*&amp;---------------------------------------------------------------------*
+ FORM fcode_delete_row
+               USING    P_TC_NAME           TYPE DYNFNAM
+                        P_TABLE_NAME
+                        P_MARK_NAME   .
+*&amp;SPWIZARD: BEGIN OF LOCAL DATA----------------------------------------*
+
+   DATA L_TABLE_NAME       LIKE FELD-NAME.
+   FIELD-SYMBOLS &lt;TC&gt;         TYPE cxtab_control.
+   FIELD-SYMBOLS &lt;TABLE&gt;      TYPE STANDARD TABLE.
+   FIELD-SYMBOLS &lt;WA&gt;.
+   FIELD-SYMBOLS &lt;MARK_FIELD&gt;.
+*&amp;SPWIZARD: END OF LOCAL DATA------------------------------------------*
+   ASSIGN (P_TC_NAME) TO &lt;TC&gt;.
+*&amp;SPWIZARD: get the table, which belongs to the tc                     *
+   CONCATENATE P_TABLE_NAME &#39;[]&#39; INTO L_TABLE_NAME. &quot;table body
+   ASSIGN (L_TABLE_NAME) TO &lt;TABLE&gt;.                &quot;not headerline
+*&amp;SPWIZARD: delete marked lines                                        *
+   DESCRIBE TABLE &lt;TABLE&gt; LINES &lt;TC&gt;-LINES.
+   LOOP AT &lt;TABLE&gt; ASSIGNING &lt;WA&gt;.
+*&amp;SPWIZARD: access to the component &#39;FLAG&#39; of the table header         *
+     ASSIGN COMPONENT P_MARK_NAME OF STRUCTURE &lt;WA&gt; TO &lt;MARK_FIELD&gt;.
+     IF &lt;MARK_FIELD&gt; = &#39;X&#39;.
+       DELETE &lt;TABLE&gt; INDEX SYST-TABIX.
+       IF SY-SUBRC = 0.
+         &lt;TC&gt;-LINES = &lt;TC&gt;-LINES - 1.
+       ENDIF.
+     ENDIF.
+   ENDLOOP.
+ ENDFORM.                              &quot; FCODE_DELETE_ROW
+*&amp;---------------------------------------------------------------------*
+*&amp;      Form  COMPUTE_SCROLLING_IN_TC
+*&amp;---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      --&gt;P_TC_NAME  name of tablecontrol
+*      --&gt;P_OK       ok code
+*----------------------------------------------------------------------*
+ FORM COMPUTE_SCROLLING_IN_TC USING    P_TC_NAME
+                                       P_OK.
+*&amp;SPWIZARD: BEGIN OF LOCAL DATA----------------------------------------*
+   DATA L_TC_NEW_TOP_LINE     TYPE I.
+   DATA L_TC_NAME             LIKE FELD-NAME.
+   DATA L_TC_LINES_NAME       LIKE FELD-NAME.
+   DATA L_TC_FIELD_NAME       LIKE FELD-NAME.
+   FIELD-SYMBOLS &lt;TC&gt;         TYPE cxtab_control.
+   FIELD-SYMBOLS &lt;LINES&gt;      TYPE I.
+*&amp;SPWIZARD: END OF LOCAL DATA------------------------------------------*
+   ASSIGN (P_TC_NAME) TO &lt;TC&gt;.
+
+*&amp;SPWIZARD: get looplines of TableControl                              *
+   CONCATENATE &#39;G_&#39; P_TC_NAME &#39;_LINES&#39; INTO L_TC_LINES_NAME.
+   ASSIGN (L_TC_LINES_NAME) TO &lt;LINES&gt;.
+
+*&amp;SPWIZARD: is no line filled?                                         *
+   IF &lt;TC&gt;-LINES = 0.
+*&amp;SPWIZARD: yes, ...                                                   *
+     L_TC_NEW_TOP_LINE = 1.
+   ELSE.
+*&amp;SPWIZARD: no, ...                                                    *
+     CALL FUNCTION &#39;SCROLLING_IN_TABLE&#39;
+          EXPORTING
+               ENTRY_ACT             = &lt;TC&gt;-TOP_LINE
+               ENTRY_FROM            = 1
+               ENTRY_TO              = &lt;TC&gt;-LINES
+               LAST_PAGE_FULL        = &#39;X&#39;
+               LOOPS                 = &lt;LINES&gt;
+               OK_CODE               = P_OK
+               OVERLAPPING           = &#39;X&#39;
+          IMPORTING
+               ENTRY_NEW             = L_TC_NEW_TOP_LINE
+          EXCEPTIONS
+*              NO_ENTRY_OR_PAGE_ACT  = 01
+*              NO_ENTRY_TO           = 02
+*              NO_OK_CODE_OR_PAGE_GO = 03
+               OTHERS                = 0.
+   ENDIF.
+*&amp;SPWIZARD: get actual tc and column                                   *
+   GET CURSOR FIELD L_TC_FIELD_NAME
+              AREA  L_TC_NAME.
+   IF SYST-SUBRC = 0.
+     IF L_TC_NAME = P_TC_NAME.
+*&amp;SPWIZARD: et actual column                                           *
+       SET CURSOR FIELD L_TC_FIELD_NAME LINE 1.
+     ENDIF.
+   ENDIF.
+*&amp;SPWIZARD: set the new top line                                       *
+   &lt;TC&gt;-TOP_LINE = L_TC_NEW_TOP_LINE.
+
+ ENDFORM.                              &quot; COMPUTE_SCROLLING_IN_TC
+*&amp;---------------------------------------------------------------------*
+*&amp;      Form  FCODE_TC_MARK_LINES
+*&amp;---------------------------------------------------------------------*
+*       marks all TableControl lines
+*----------------------------------------------------------------------*
+*      --&gt;P_TC_NAME  name of tablecontrol
+*----------------------------------------------------------------------*
+
+FORM FCODE_TC_MARK_LINES USING P_TC_NAME
+                               P_TABLE_NAME
+                               P_MARK_NAME.
+*&amp;SPWIZARD: EGIN OF LOCAL DATA-----------------------------------------*
+  DATA L_TABLE_NAME       LIKE FELD-NAME.
+  FIELD-SYMBOLS &lt;TC&gt;         TYPE cxtab_control.
+  FIELD-SYMBOLS &lt;TABLE&gt;      TYPE STANDARD TABLE.
+  FIELD-SYMBOLS &lt;WA&gt;.
+  FIELD-SYMBOLS &lt;MARK_FIELD&gt;.
+*&amp;SPWIZARD: END OF LOCAL DATA------------------------------------------*
+  ASSIGN (P_TC_NAME) TO &lt;TC&gt;.
+*&amp;SPWIZARD: get the table, which belongs to the tc                     *
+   CONCATENATE P_TABLE_NAME &#39;[]&#39; INTO L_TABLE_NAME. &quot;table body
+   ASSIGN (L_TABLE_NAME) TO &lt;TABLE&gt;.                &quot;not headerline
+*&amp;SPWIZARD: mark all filled lines                                      *
+  LOOP AT &lt;TABLE&gt; ASSIGNING &lt;WA&gt;.
+*&amp;SPWIZARD: access to the component &#39;FLAG&#39; of the table header         *
+     ASSIGN COMPONENT P_MARK_NAME OF STRUCTURE &lt;WA&gt; TO &lt;MARK_FIELD&gt;.
+     &lt;MARK_FIELD&gt; = &#39;X&#39;.
+  ENDLOOP.
+ENDFORM.                                          &quot;fcode_tc_mark_lines
+*&amp;---------------------------------------------------------------------*
+*&amp;      Form  FCODE_TC_DEMARK_LINES
+*&amp;---------------------------------------------------------------------*
+*       demarks all TableControl lines
+*----------------------------------------------------------------------*
+*      --&gt;P_TC_NAME  name of tablecontrol
+*----------------------------------------------------------------------*
+FORM FCODE_TC_DEMARK_LINES USING P_TC_NAME
+                                 P_TABLE_NAME
+                                 P_MARK_NAME .
+*&amp;SPWIZARD: BEGIN OF LOCAL DATA----------------------------------------*
+  DATA L_TABLE_NAME       LIKE FELD-NAME.
+  FIELD-SYMBOLS &lt;TC&gt;         TYPE cxtab_control.
+  FIELD-SYMBOLS &lt;TABLE&gt;      TYPE STANDARD TABLE.
+  FIELD-SYMBOLS &lt;WA&gt;.
+  FIELD-SYMBOLS &lt;MARK_FIELD&gt;.
+*&amp;SPWIZARD: END OF LOCAL DATA------------------------------------------*
+  ASSIGN (P_TC_NAME) TO &lt;TC&gt;.
+*&amp;SPWIZARD: get the table, which belongs to the tc                     *
+   CONCATENATE P_TABLE_NAME &#39;[]&#39; INTO L_TABLE_NAME. &quot;table body
+   ASSIGN (L_TABLE_NAME) TO &lt;TABLE&gt;.                &quot;not headerline
+
+*&amp;SPWIZARD: demark all filled lines                                    *
+  LOOP AT &lt;TABLE&gt; ASSIGNING &lt;WA&gt;.
+*&amp;SPWIZARD: access to the component &#39;FLAG&#39; of the table header         *
+     ASSIGN COMPONENT P_MARK_NAME OF STRUCTURE &lt;WA&gt; TO &lt;MARK_FIELD&gt;.
+     &lt;MARK_FIELD&gt; = SPACE.
+  ENDLOOP.
+ENDFORM.                                          &quot;fcode_tc_mark_lines
+*&amp;SPWIZARD: TYPE FOR THE DATA OF TABLECONTROL &#39;ZTEST11&#39;
+TYPES: BEGIN OF T_ZTEST11,
+         REQ_NO LIKE ZTABLE_REQ-REQ_NO,
+         MATERIAL LIKE ZTABLE_REQ-MATERIAL,
+         MAT_DES LIKE ZTABLE_REQ-MAT_DES,
+         QUANTITY LIKE ZTABLE_REQ-QUANTITY,
+         FLAG_BIT LIKE ZTABLE_REQ-FLAG_BIT,
+       END OF T_ZTEST11.
+*&amp;SPWIZARD: INTERNAL TABLE FOR TABLECONTROL &#39;ZTEST11&#39;
+DATA:     G_ZTEST11_ITAB   TYPE T_ZTEST11 OCCURS 0,
+          G_ZTEST11_WA     TYPE T_ZTEST11. &quot;work area
+DATA:     G_ZTEST11_COPIED.           &quot;copy flag
+*&amp;SPWIZARD: DECLARATION OF TABLECONTROL &#39;ZTEST11&#39; ITSELF
+CONTROLS: ZTEST11 TYPE TABLEVIEW USING SCREEN 0300.
+*&amp;SPWIZARD: LINES OF TABLECONTROL &#39;ZTEST11&#39;
+DATA:     G_ZTEST11_LINES  LIKE SY-LOOPC.
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ZTEST11&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: COPY DDIC-TABLE TO ITAB
+MODULE ZTEST11_INIT OUTPUT.
+  IF G_ZTEST11_COPIED IS INITIAL.
+*&amp;SPWIZARD: COPY DDIC-TABLE &#39;ZTABLE_REQ&#39;
+*&amp;SPWIZARD: INTO INTERNAL TABLE &#39;g_ZTEST11_itab&#39;
+    SELECT * FROM ZTABLE_REQ
+       INTO CORRESPONDING FIELDS
+       OF TABLE G_ZTEST11_ITAB.
+    G_ZTEST11_COPIED = &#39;X&#39;.
+    REFRESH CONTROL &#39;ZTEST11&#39; FROM SCREEN &#39;0300&#39;.
+  ENDIF.
+ENDMODULE.
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ZTEST11&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: MOVE ITAB TO DYNPRO
+MODULE ZTEST11_MOVE OUTPUT.
+  MOVE-CORRESPONDING G_ZTEST11_WA TO ZTABLE_REQ.
+ENDMODULE.
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ZTEST11&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: GET LINES OF TABLECONTROL
+MODULE ZTEST11_GET_LINES OUTPUT.
+
+  G_ZTEST11_LINES = SY-LOOPC.
+ENDMODULE.
+*&amp;SPWIZARD: INPUT MODULE FOR TC &#39;ZTEST11&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: PROCESS USER COMMAND
+MODULE ZTEST11_USER_COMMAND INPUT.
+  OK_CODE = SY-UCOMM.
+  PERFORM USER_OK_TC USING    &#39;ZTEST11&#39;
+                              &#39;G_ZTEST11_ITAB&#39;
+                              &#39;FLAG&#39;
+                     CHANGING OK_CODE.
+  SY-UCOMM = OK_CODE.
+ENDMODULE.
+*&amp;SPWIZARD: TYPE FOR THE DATA OF TABLECONTROL &#39;ZTEST2&#39;
+TYPES: BEGIN OF T_ZTEST2,
+         REQ_NO LIKE ZTABLE_REQ-REQ_NO,
+         MATERIAL LIKE ZTABLE_REQ-MATERIAL,
+         MAT_DES LIKE ZTABLE_REQ-MAT_DES,
+         QUANTITY LIKE ZTABLE_REQ-QUANTITY,
+         FLAG_BIT LIKE ZTABLE_REQ-FLAG_BIT,
+       END OF T_ZTEST2.
+*&amp;SPWIZARD: INTERNAL TABLE FOR TABLECONTROL &#39;ZTEST2&#39;
+DATA:     G_ZTEST2_ITAB   TYPE T_ZTEST2 OCCURS 0,
+          G_ZTEST2_WA     TYPE T_ZTEST2. &quot;work area
+DATA:     G_ZTEST2_COPIED.           &quot;copy flag
+*&amp;SPWIZARD: DECLARATION OF TABLECONTROL &#39;ZTEST2&#39; ITSELF
+CONTROLS: ZTEST2 TYPE TABLEVIEW USING SCREEN 0300.
+*&amp;SPWIZARD: LINES OF TABLECONTROL &#39;ZTEST2&#39;
+DATA:     G_ZTEST2_LINES  LIKE SY-LOOPC.
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ZTEST2&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: COPY DDIC-TABLE TO ITAB
+MODULE ZTEST2_INIT OUTPUT.
+  IF G_ZTEST2_COPIED IS INITIAL.
+*&amp;SPWIZARD: COPY DDIC-TABLE &#39;ZTABLE_REQ&#39;
+*&amp;SPWIZARD: INTO INTERNAL TABLE &#39;g_ZTEST2_itab&#39;
+    SELECT * FROM ZTABLE_REQ
+       INTO CORRESPONDING FIELDS
+       OF TABLE G_ZTEST2_ITAB.
+    G_ZTEST2_COPIED = &#39;X&#39;.
+    REFRESH CONTROL &#39;ZTEST2&#39; FROM SCREEN &#39;0300&#39;.
+  ENDIF.
+ENDMODULE.
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ZTEST2&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: MOVE ITAB TO DYNPRO
+MODULE ZTEST2_MOVE OUTPUT.
+  MOVE-CORRESPONDING G_ZTEST2_WA TO ZTABLE_REQ.
+ENDMODULE.
+
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ZTEST2&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: GET LINES OF TABLECONTROL
+MODULE ZTEST2_GET_LINES OUTPUT.
+  G_ZTEST2_LINES = SY-LOOPC.
+ENDMODULE.
+*&amp;SPWIZARD: INPUT MODULE FOR TC &#39;ZTEST2&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: MODIFY TABLE
+MODULE ZTEST2_MODIFY INPUT.
+  MOVE-CORRESPONDING ZTABLE_REQ TO G_ZTEST2_WA.
+  MODIFY G_ZTEST2_ITAB
+    FROM G_ZTEST2_WA
+    INDEX ZTEST2-CURRENT_LINE.
+ENDMODULE.
+*&amp;SPWIZARD: INPUT MODULE FOR TC &#39;ZTEST2&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: PROCESS USER COMMAND
+MODULE ZTEST2_USER_COMMAND INPUT.
+  OK_CODE = SY-UCOMM.
+  PERFORM USER_OK_TC USING    &#39;ZTEST2&#39;
+                              &#39;G_ZTEST2_ITAB&#39;
+                              &#39;FLAG&#39;
+                     CHANGING OK_CODE.
+  SY-UCOMM = OK_CODE.
+ENDMODULE.
+*&amp;SPWIZARD: TYPE FOR THE DATA OF TABLECONTROL &#39;ISSUETB&#39;
+TYPES: BEGIN OF T_ISSUETB,
+         REQ_NO LIKE ZTABLE_REQ-REQ_NO,
+         MATERIAL LIKE ZTABLE_REQ-MATERIAL,
+         MAT_DES LIKE ZTABLE_REQ-MAT_DES,
+         QUANTITY LIKE ZTABLE_REQ-QUANTITY,
+         FLAG_BIT LIKE ZTABLE_REQ-FLAG_BIT,
+       END OF T_ISSUETB.
+*&amp;SPWIZARD: INTERNAL TABLE FOR TABLECONTROL &#39;ISSUETB&#39;
+DATA:     G_ISSUETB_ITAB   TYPE T_ISSUETB OCCURS 0,
+          G_ISSUETB_WA     TYPE T_ISSUETB. &quot;work area
+DATA:     G_ISSUETB_COPIED.           &quot;copy flag
+*&amp;SPWIZARD: DECLARATION OF TABLECONTROL &#39;ISSUETB&#39; ITSELF
+CONTROLS: ISSUETB TYPE TABLEVIEW USING SCREEN 0300.
+*&amp;SPWIZARD: LINES OF TABLECONTROL &#39;ISSUETB&#39;
+DATA:     G_ISSUETB_LINES  LIKE SY-LOOPC.
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ISSUETB&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: COPY DDIC-TABLE TO ITAB
+MODULE ISSUETB_INIT OUTPUT.
+  IF G_ISSUETB_COPIED IS INITIAL.
+*&amp;SPWIZARD: COPY DDIC-TABLE &#39;ZTABLE_REQ&#39;
+*&amp;SPWIZARD: INTO INTERNAL TABLE &#39;g_ISSUETB_itab&#39;
+
+    SELECT * FROM ZTABLE_REQ
+       INTO CORRESPONDING FIELDS
+       OF TABLE G_ISSUETB_ITAB.
+    G_ISSUETB_COPIED = &#39;X&#39;.
+    REFRESH CONTROL &#39;ISSUETB&#39; FROM SCREEN &#39;0300&#39;.
+  ENDIF.
+ENDMODULE.
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ISSUETB&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: MOVE ITAB TO DYNPRO
+MODULE ISSUETB_MOVE OUTPUT.
+  MOVE-CORRESPONDING G_ISSUETB_WA TO ZTABLE_REQ.
+ENDMODULE.
+*&amp;SPWIZARD: OUTPUT MODULE FOR TC &#39;ISSUETB&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: GET LINES OF TABLECONTROL
+MODULE ISSUETB_GET_LINES OUTPUT.
+  G_ISSUETB_LINES = SY-LOOPC.
+ENDMODULE.
+*&amp;SPWIZARD: INPUT MODULE FOR TC &#39;ISSUETB&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: MODIFY TABLE
+MODULE ISSUETB_MODIFY INPUT.
+  MOVE-CORRESPONDING ZTABLE_REQ TO G_ISSUETB_WA.
+  MODIFY G_ISSUETB_ITAB
+    FROM G_ISSUETB_WA
+    INDEX ISSUETB-CURRENT_LINE.
+ENDMODULE.
+*&amp;SPWIZARD: INPUT MODULE FOR TC &#39;ISSUETB&#39;. DO NOT CHANGE THIS LINE!
+*&amp;SPWIZARD: PROCESS USER COMMAND
+MODULE ISSUETB_USER_COMMAND INPUT.
+  OK_CODE = SY-UCOMM.
+  PERFORM USER_OK_TC USING    &#39;ISSUETB&#39;
+                              &#39;G_ISSUETB_ITAB&#39;
+                              &#39;FLAG&#39;
+                     CHANGING OK_CODE.
+  SY-UCOMM = OK_CODE.
+ENDMODULE.

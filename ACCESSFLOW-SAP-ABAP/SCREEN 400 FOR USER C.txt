@@ -1,0 +1,87 @@
+*&amp;---------------------------------------------------------------------*
+*&amp;      Module  USER_COMMAND_0400  INPUT
+*&amp;---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+DATA: wa_header TYPE bapi2017_gm_head_01,
+      wa_item TYPE   bapi2017_gm_item_create,
+      it_table TYPE TABLE OF bapi2017_gm_item_create,
+      wa_return TYPE bapiret2,
+      it_return TYPE TABLE OF bapiret2,
+      lv_mat_doc TYPE bapi2017_gm_head_ret-mat_doc,
+      lv_year TYPE bapi2017_gm_head_ret-doc_year,
+      gm_code TYPE bapi2017_GM_CODE.
+
+MODULE user_command_0400 INPUT.
+  CASE SY-UCOMM.
+     WHEN &#39;BACK&#39;.
+    CALL SCREEN 0100.
+     WHEN &#39;SEARCH&#39;  OR &#39; &#39;.
+       SELECT * FROM ZTABLE_REQ INTO TABLE ls_table WHERE REQ_NO = RE_NO AND 
+FLAG_BIT = &#39;X&#39;.
+*       SELECT SINGLE VMLAB FROM MARD INTO ls_table-
+STOCK WHERE MATNR = ls_table-MATERIAL.
+*        SELECT SINGLE VERPR FROM MBEW INTO ls_table-
+VALUE WHERE MATNR = ls_table-MATERIAL.
+      WHEN &#39;REJECT&#39;.
+         IF ls_table IS INITIAL .
+          MESSAGE : &#39; REQUEST NUMBER NOT SELECTED  OR NO REQUEST NUMBER FOUND
+ LIKE THIS TO REJECT &#39; TYPE &#39;E&#39; .
+          ELSE.
+            ls_table-FLAG_BIT = &#39;R&#39;.
+            MODIFY ZTABLE_REQ FROM ls_table.
+       ENDIF.
+     WHEN &#39;ISSUE&#39;.
+        IF ls_table IS INITIAL .
+
+          MESSAGE : &#39; REQUEST NUMBER NOT SELECTED  OR REQUEST NUMBER NOT APPR
+OVED YET . &#39; TYPE &#39;E&#39; .
+        ELSEIF ls_table-STOCK &lt; 1.
+          MESSAGE : &#39;stock not available to issue&#39; TYPE &#39;E&#39;.
+        ELSE.
+  wa_header-pstng_date = sy-datum.
+*wa_header-doc_date = cd_date.
+
+gm_code-gm_code = &#39;03&#39;.
+wa_item-material = ls_table-MATERIAL.
+wa_item-plant = ls_table-PLANT.
+wa_item-stge_loc = &#39;1120&#39;.
+wa_item-move_type = &#39;201&#39;.
+*wa_item-MOVE_STLOC = m_loc.
+wa_item-entry_qnt = ls_table-QUANTITY.
+*wa_item-ENTRY_UOM = &#39;NOS&#39;.
+APPEND wa_item TO it_table.
+CALL FUNCTION &#39;BAPI_GOODSMVT_CREATE&#39;
+EXPORTING
+  goodsmvt_header = wa_header
+  goodsmvt_code = gm_code
+IMPORTING
+   materialdocument =  lv_mat_doc
+   matdocumentyear =    lv_year
+   TABLES
+     goodsmvt_item = it_table
+     return = it_return.
+
+IF sy-subrc = 0.
+*WRITE &#39;SUCCESS&#39;.
+  CALL FUNCTION &#39;BAPI_TRANSACTION_COMMIT&#39;
+  EXPORTING
+    wait = &#39;X&#39;.
+*  DATA : d TYPE DATS,
+*        t TYPE TIMS.
+*    d = ls_table-APP_DATE .
+*     t = ls_table-APP_TIME.
+  ls_table-ISS_DATE = SY-DATUM.
+  ls_table-ISS_TIME = SY-UZEIT.
+*  ls_table-APP_DATE = d.
+*   ls_table-APP_TIME = t.
+  ls_table-FLAG_BIT = &#39;I&#39;.
+    MODIFY ZTABLE_REQ FROM ls_table.
+
+    MESSAGE : &#39;SUCCESSFULLY ISSUED &#39; TYPE &#39;S&#39;.
+  ELSE.
+MESSAGE: &#39;FAIL TO ISSUE TRY AGAIN LATER&#39; TYPE &#39;E&#39;.
+ENDIF.
+ ENDIF.
+ENDCASE.
+ENDMODULE.
